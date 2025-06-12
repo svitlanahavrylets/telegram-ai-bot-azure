@@ -26,19 +26,18 @@ async function getWorkingStatus() {
     const manualOverride = data.manualOverride === "true";
     const isOpen = data.isOpen === "true";
 
-    if (manualOverride) return true; // Ручний режим вмикає роботу
-    return isOpen; // Звичайний режим
+    if (manualOverride) return true;
+    return isOpen;
   } catch (err) {
     console.error("Не вдалося отримати графік:", err);
-    return true; // fallback: краще працювати, ніж мовчати
+    return true;
   }
 }
 
-// Відправка даних у Google Таблиці через Webhook Make
 async function sendDataToGoogleSheets(data) {
   try {
     await axios.post(
-      "https://hook.eu2.make.com/08ktt9547kxpdk4lng9rcd4bdmbtmahg", // Заміни на свій Webhook Make
+      "https://hook.eu2.make.com/08ktt9547kxpdk4lng9rcd4bdmbtmahg",
       data
     );
     console.log("Дані успішно надіслані:", data);
@@ -55,7 +54,6 @@ bot.start(async (ctx) => {
   );
 });
 
-// Обробка текстових повідомлень
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   const session = ctx.session;
@@ -82,13 +80,11 @@ bot.on("text", async (ctx) => {
     case 4:
       session.data.problem = text;
 
-      // AI-відповідь (опційно)
       const aiReply = await getAIResponse(
         `Клієнт описав проблему: ${text}. Дай коротку дружню відповідь.`
       );
       await ctx.reply(aiReply);
 
-      // Перевірка через Make Webhook
       const workingStatus = await getWorkingStatus();
 
       if (workingStatus) {
@@ -98,11 +94,9 @@ bot.on("text", async (ctx) => {
             `📞 +380930000000`
         );
 
-        // Зберігаємо і завершуємо сесію
         await sendDataToGoogleSheets(session.data);
         ctx.session = null;
 
-        // Виводимо меню послуг
         const servicesKeyboard = Markup.keyboard([
           ["🛠️ Технічне обслуговування"],
           ["💻 Операційна система"],
@@ -111,7 +105,6 @@ bot.on("text", async (ctx) => {
 
         await ctx.reply("Оберіть послугу:", servicesKeyboard);
       } else {
-        // Якщо не робочий час — просимо телефон
         session.step = 5;
         await ctx.reply(
           "Наразі ми не працюємо. Будь ласка, залиште свій номер телефону, щоб ми могли передзвонити у робочий час."
@@ -120,11 +113,9 @@ bot.on("text", async (ctx) => {
       break;
 
     case 5:
-      // Отримуємо телефон
       session.data.phone = text;
       await ctx.reply("Дякую! Ми зв’яжемося з вами у робочий час.");
 
-      // Зберігаємо дані
       await sendDataToGoogleSheets(session.data);
       ctx.session = null;
       break;
@@ -134,7 +125,6 @@ bot.on("text", async (ctx) => {
   }
 });
 
-// Обробка вибору послуг
 bot.hears("🛠️ Технічне обслуговування", async (ctx) => {
   const content = await getServiceContent("Технічне_обслуговування");
   await ctx.reply(content);
@@ -153,18 +143,17 @@ bot.hears("🛒 Купівля / Продаж ноутбуків та компл
 console.log("Using model:", process.env.DEEPINFRA_MODEL);
 console.log("Using API key:", process.env.DEEPINFRA_API_KEY ? "YES" : "NO");
 
-// Виклик AI через DeepInfra (опційно)
 async function getAIResponse(userInput) {
   try {
     const response = await axios.post(
-      "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct", // НЕ використовуємо process.env для моделі
+      "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
       {
         input: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n${userInput}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`,
         stop: ["<|eot_id|>"],
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`, // А тут ключ можна залишити з .env
+          Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
