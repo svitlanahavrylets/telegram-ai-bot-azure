@@ -6,9 +6,18 @@ import systemPrompt from "./prompt.js";
 
 dotenv.config();
 
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception thrown:", err);
+});
+
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
 
 bot.use(session());
+
+console.log("Starting bot...");
 
 function isWorkingHours() {
   const now = dayjs();
