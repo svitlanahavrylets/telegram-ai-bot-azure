@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import dayjs from "dayjs";
 import { Telegraf, session, Markup } from "telegraf";
 import systemPrompt from "./prompt.js";
+// import express from "express";
 
 dotenv.config();
 
@@ -32,14 +33,15 @@ async function getWorkingStatus() {
     );
 
     const data = response.data;
+
     const manualOverride = String(data.manualOverride).toLowerCase() === "true";
     const isOpen = String(data.isOpen).toLowerCase() === "true";
 
-    if (manualOverride) return true;
-    return isOpen;
+    return { manualOverride, isOpen };
   } catch (err) {
     console.error("Не вдалося отримати графік:", err);
-    return true;
+    // У разі помилки — вважаємо що майстер працює, аби не втратити клієнта
+    return { manualOverride: false, isOpen: true };
   }
 }
 
@@ -99,14 +101,31 @@ bot.hears("🛒 Купівля / Продаж ноутбуків та компл
   await ctx.reply(content);
   await askForNextStep(ctx);
 });
+
 async function askForNextStep(ctx) {
-  const working = await getWorkingStatus();
-  if (working && isWorkingHours()) {
+  if (ctx.session?.step && ctx.session.step !== "start") {
+    return ctx.reply("Спершу завершіть поточне опитування 🙏");
+  }
+
+  const { manualOverride, isOpen } = await getWorkingStatus();
+  const isWithinWorkingHours = isWorkingHours();
+
+  const isWorking = manualOverride ? isOpen : isWithinWorkingHours;
+
+  console.log("manualOverride:", manualOverride);
+  console.log("isOpen:", isOpen);
+  console.log("isWithinWorkingHours:", isWithinWorkingHours);
+  console.log("→ isWorking:", isWorking);
+
+  if (isWorking) {
     await ctx.reply(
       "Якщо ви обрали необхідне з переліку або якщо у вас виникли додаткові питання — завітайте або телефонуйте:\n📍 Київ, вул. Ушинського, 4\n📞 +380930000000"
     );
   } else {
     ctx.session.step = "collect_name";
+    await ctx.reply("Починаємо опитування!", {
+      reply_markup: { remove_keyboard: true },
+    });
     await ctx.reply(
       "Наразі майстер не працює. Дайте відповідь на кілька питань, щоб ми могли зв’язатися з вами пізніше."
     );
@@ -211,10 +230,18 @@ bot.on("text", async (ctx) => {
     } else {
       session.data.problem = session.tempProblem;
       await sendDataToGoogleSheets(session.data);
-      ctx.session = null;
-      return ctx.reply(
+
+      await ctx.reply(
         "Дякуємо! Ми зв’яжемося з вами у найближчий робочий час. Зазвичай ми працюємо щодня з 10:00 до 18:00."
       );
+      await ctx.reply("Натисніть кнопку нижче, щоб повернутись до меню.", {
+        reply_markup: {
+          keyboard: [["🔙 Головне меню"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      ctx.session = null;
     }
   }
 });
@@ -248,3 +275,19 @@ async function getAIResponse(userInput) {
 console.log("Using API key:", process.env.DEEPINFRA_API_KEY ? "YES" : "NO");
 
 bot.launch();
+
+// // Ініціалізація Express
+// const app = express();
+// app.use(express.json());
+
+// // Задаємо шлях, за яким Telegram буде надсилати події
+// app.use(bot.webhookCallback("/secret-path"));
+
+// // Встановлюємо webhook (URL твоєї Railway + "/secret-path")
+// bot.telegram.setWebhook(`${process.env.WEBHOOK_URL}/secret-path`);
+
+// const PORT = process.env.PORT || 3000;
+
+// app.listen(PORT, () => {
+//   console.log(`Webhook сервер запущено на порту ${PORT}`);
+// });
