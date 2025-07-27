@@ -1,9 +1,4 @@
-// import axios from "axios";
-// import dotenv from "dotenv";
-// import dayjs from "dayjs";
-// import { Telegraf, session, Markup } from "telegraf";
-// import systemPrompt from "./prompt.js";
-
+const express = require("express");
 const axios = require("axios");
 const dotenv = require("dotenv");
 const dayjs = require("dayjs");
@@ -12,16 +7,15 @@ const systemPrompt = require("./prompt.js");
 
 dotenv.config();
 
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
-});
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception thrown:", err);
-});
-
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
-
 bot.use(session());
+
+process.on("unhandledRejection", (reason) =>
+  console.error("Unhandled Rejection:", reason)
+);
+process.on("uncaughtException", (err) =>
+  console.error("Uncaught Exception:", err)
+);
 
 console.log("Starting bot...");
 
@@ -143,7 +137,6 @@ bot.on("text", async (ctx) => {
   const session = ctx.session;
 
   if (!session.step || session.step === "start") {
-    // AI порада щодо категорії (твій існуючий код)
     const aiCategory = await getAIResponse(
       `Клієнт написав: "${text}". Яку з трьох категорій це найбільше стосується: "Технічне обслуговування", "Операційна система" чи "Купівля / Продаж"? Відповідай лише однією з цих назв.`
     );
@@ -201,7 +194,6 @@ bot.on("text", async (ctx) => {
           "🤨 Гм... Це звучить не зовсім як технічна проблема. Можливо, спробуєте ще раз описати, що саме не працює або що вас цікавить?"
         );
       } else {
-        // Зберігаємо навіть дурницю, але чесно кажемо
         session.data.problem = session.tempProblem;
         await sendDataToGoogleSheets(session.data);
         ctx.session = null;
@@ -277,18 +269,32 @@ async function getAIResponse(userInput) {
   }
 }
 
-console.log("Using API key:", process.env.DEEPINFRA_API_KEY ? "YES" : "NO");
-
-bot.launch();
-
-const express = require("express");
 const app = express();
+app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Бот працює 👍");
+app.get("/", async (req, res) => {
+  try {
+    const me = await bot.telegram.getMe();
+    res.send(`🤖 Бот активний як @${me.username}`);
+  } catch (e) {
+    res.status(500).send("Бот недоступний");
+  }
+});
+
+app.post("/webhook", (req, res) => {
+  bot.handleUpdate(req.body, res);
 });
 
 const PORT = process.env.PORT || 7000;
-app.listen(PORT, () => {
-  console.log(`Express сервер слухає порт ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`✅ Сервер слухає порт ${PORT}`);
+
+  const domain = process.env.WEBHOOK_URL;
+  if (!domain) {
+    return console.error("❗ Вкажи WEBHOOK_URL у .env або Azure App Settings");
+  }
+
+  const webhookUrl = `${domain}/webhook`;
+  await bot.telegram.setWebhook(webhookUrl);
+  console.log("📌 Webhook встановлено на:", webhookUrl);
 });
