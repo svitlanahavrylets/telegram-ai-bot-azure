@@ -122,11 +122,12 @@ async function askForNextStep(ctx) {
     );
   } else {
     ctx.session.step = "collect_name";
-    await ctx.reply("Починаємо опитування!", {
-      reply_markup: { remove_keyboard: true },
-    });
+
     await ctx.reply(
-      "Наразі майстер не працює. Дайте відповідь на кілька питань, щоб ми могли зв’язатися з вами пізніше."
+      "Наразі майстер не працює. Дайте відповідь на кілька питань, щоб ми могли зв’язатися з вами пізніше.",
+      {
+        reply_markup: { remove_keyboard: true },
+      }
     );
     await ctx.reply("(1/3) Як можна до вас звертатися?");
   }
@@ -246,25 +247,29 @@ bot.on("text", async (ctx) => {
 async function getAIResponse(userInput) {
   try {
     const response = await axios.post(
-      "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct",
+      "https://api.openai.com/v1/chat/completions",
       {
-        input: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n${userInput}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`,
-        stop: ["<|eot_id|>"],
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userInput },
+        ],
+        temperature: 0.7,
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
     );
 
     return (
-      response.data.results?.[0]?.generated_text?.trim() ||
+      response.data.choices?.[0]?.message?.content?.trim() ||
       "Вибачте, не вдалося отримати відповідь."
     );
   } catch (error) {
-    console.error("DeepInfra error:", error.response?.data || error.message);
+    console.error("OpenAI error:", error.response?.data || error.message);
     return "Сталася помилка при зверненні до AI. Але ми продовжуємо працювати!";
   }
 }
