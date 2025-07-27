@@ -1,9 +1,14 @@
-import axios from "axios";
-import dotenv from "dotenv";
-import dayjs from "dayjs";
-import { Telegraf, session, Markup } from "telegraf";
-import systemPrompt from "./prompt.js";
-// import express from "express";
+// import axios from "axios";
+// import dotenv from "dotenv";
+// import dayjs from "dayjs";
+// import { Telegraf, session, Markup } from "telegraf";
+// import systemPrompt from "./prompt.js";
+
+const axios = require("axios");
+const dotenv = require("dotenv");
+const dayjs = require("dayjs");
+const { Telegraf, session, Markup } = require("telegraf");
+const systemPrompt = require("./prompt.js");
 
 dotenv.config();
 
@@ -276,18 +281,14 @@ console.log("Using API key:", process.env.DEEPINFRA_API_KEY ? "YES" : "NO");
 
 bot.launch();
 
-// // Ініціалізація Express
-// const app = express();
-// app.use(express.json());
+const express = require("express");
+const app = express();
 
-// // Задаємо шлях, за яким Telegram буде надсилати події
-// app.use(bot.webhookCallback("/secret-path"));
+app.get("/", (req, res) => {
+  res.send("Бот працює 👍");
+});
 
-// // Встановлюємо webhook (URL твоєї Railway + "/secret-path")
-// bot.telegram.setWebhook(`${process.env.WEBHOOK_URL}/secret-path`);
-
-// const PORT = process.env.PORT || 3000;
-
-// app.listen(PORT, () => {
-//   console.log(`Webhook сервер запущено на порту ${PORT}`);
-// });
+const PORT = process.env.PORT || 7000;
+app.listen(PORT, () => {
+  console.log(`Express сервер слухає порт ${PORT}`);
+});
