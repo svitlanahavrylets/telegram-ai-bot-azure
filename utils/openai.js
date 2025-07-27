@@ -21,6 +21,11 @@ async function getAIResponse(userInput) {
       }
     );
 
+    console.log(
+      "🔍 AI (step check):",
+      response.data.choices?.[0]?.message?.content?.trim()
+    );
+
     return (
       response.data.choices?.[0]?.message?.content?.trim() ||
       "Вибачте, не вдалося отримати відповідь."

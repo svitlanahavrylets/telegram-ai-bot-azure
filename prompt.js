@@ -25,4 +25,4 @@ const systemPrompt = `
 Допоможи клієнту зрозуміти проблему та переконай звернутися саме в наш сервіс — для надійного, швидкого і професійного вирішення.
 `;
 
-export default systemPrompt;
+module.exports = systemPrompt;

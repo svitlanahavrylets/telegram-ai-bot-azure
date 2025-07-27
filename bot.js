@@ -131,7 +131,7 @@ bot.on("text", async (ctx) => {
   Відповідь лише: "Так" або "Ні".`
     );
 
-    const isValid = aiReply.toLowerCase().includes("так");
+    const isValid = aiReply.toLowerCase() === "так";
 
     if (!isValid) {
       session.problemAttempts++;
