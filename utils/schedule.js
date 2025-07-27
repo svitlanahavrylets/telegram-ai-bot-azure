@@ -20,8 +20,8 @@ async function getWorkingStatus() {
 
     return { manualOverride, isOpen };
   } catch (err) {
-    console.error("Не вдалося отримати графік:", err);
-    // У разі помилки — вважаємо що майстер працює, аби не втратити клієнта
+    console.error("Failed to fetch working schedule:", err);
+    // In case of error — assuming technician is available to avoid losing a client.
     return { manualOverride: false, isOpen: true };
   }
 }

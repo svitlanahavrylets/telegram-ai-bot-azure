@@ -22,39 +22,39 @@ console.log("Starting bot...");
 bot.start(async (ctx) => {
   ctx.session = { step: "start", data: {} };
   await ctx.reply(
-    "Привіт! Я — помічник майстра з ремонту ноутбуків. Оберіть необхідну опцію:",
+    "Hello! I'm your laptop repair assistant. Please choose an option:",
     Markup.keyboard([
-      ["🛠️ Технічне обслуговування"],
-      ["💻 Операційна система"],
-      ["🛒 Купівля / Продаж ноутбуків та комплектуючих"],
+      ["🛠️ Technical Maintenance"],
+      ["💻 Operating System"],
+      ["🛒 Buying / Selling Laptops and Parts"],
     ]).resize()
   );
 });
 
-bot.hears("🛠️ Технічне обслуговування", async (ctx) => {
-  ctx.session.selectedCategory = "Технічне_обслуговування";
-  const content = await getServiceContent("Технічне_обслуговування");
+bot.hears("🛠️ Technical Maintenance", async (ctx) => {
+  ctx.session.selectedCategory = "Technical_Maintenance";
+  const content = await getServiceContent("Technical_Maintenance");
   await ctx.reply(content);
   await askForNextStep(ctx);
 });
 
-bot.hears("💻 Операційна система", async (ctx) => {
-  ctx.session.selectedCategory = "Операційна_система";
-  const content = await getServiceContent("Операційна_система");
+bot.hears("💻 Operating System", async (ctx) => {
+  ctx.session.selectedCategory = "Operating_System";
+  const content = await getServiceContent("Operating_System");
   await ctx.reply(content);
   await askForNextStep(ctx);
 });
 
-bot.hears("🛒 Купівля / Продаж ноутбуків та комплектуючих", async (ctx) => {
-  ctx.session.selectedCategory = "Купівля_Продаж";
-  const content = await getServiceContent("Купівля_Продаж");
+bot.hears("🛒 Buying / Selling Laptops and Parts", async (ctx) => {
+  ctx.session.selectedCategory = "Buying_Selling";
+  const content = await getServiceContent("Buying_Selling");
   await ctx.reply(content);
   await askForNextStep(ctx);
 });
 
 async function askForNextStep(ctx) {
   if (ctx.session?.step && ctx.session.step !== "start") {
-    return ctx.reply("Спершу завершіть поточне опитування 🙏");
+    return ctx.reply("Please complete the current form first 🙏");
   }
 
   const { manualOverride, isOpen } = await getWorkingStatus();
@@ -64,18 +64,18 @@ async function askForNextStep(ctx) {
 
   if (isWorking) {
     await ctx.reply(
-      "Якщо ви обрали необхідне з переліку або якщо у вас виникли додаткові питання — завітайте або телефонуйте:\n📍 Київ, вул. Ушинського, 4\n📞 +380930000000"
+      "If you have chosen a service or have further questions — feel free to visit us or call:\n📍 Kyiv, Ushynskoho St. 4\n📞 +380930000000"
     );
   } else {
     ctx.session.step = "collect_name";
 
     await ctx.reply(
-      "Наразі майстер не працює. Дайте відповідь на кілька питань, щоб ми могли зв’язатися з вами пізніше.",
+      "The technician is currently unavailable. Please answer a few questions so we can get back to you later.",
       {
         reply_markup: { remove_keyboard: true },
       }
     );
-    await ctx.reply("(1/3) Як можна до вас звертатися?");
+    await ctx.reply("(1/3) How should we address you?");
   }
 }
 
@@ -85,29 +85,23 @@ bot.on("text", async (ctx) => {
 
   if (!session.step || session.step === "start") {
     const aiCategory = await getAIResponse(
-      `Клієнт написав: "${text}". Яку з трьох категорій це найбільше стосується: "Технічне обслуговування", "Операційна система" чи "Купівля / Продаж"? Відповідай лише однією з цих назв.`
+      `The client wrote: "${text}". Which of the three categories does it most relate to: "Technical Maintenance", "Operating System", or "Purchase / Sale"? Reply with only one of these names.`
     );
     const normalized = aiCategory.toLowerCase();
-    if (normalized.includes("технічне"))
-      return bot.emit("hears", ctx, "🛠️ Технічне обслуговування");
-    if (normalized.includes("операційна"))
-      return bot.emit("hears", ctx, "💻 Операційна система");
-    if (normalized.includes("купівля") || normalized.includes("продаж"))
-      return bot.emit(
-        "hears",
-        ctx,
-        "🛒 Купівля / Продаж ноутбуків та комплектуючих"
-      );
-    return ctx.reply(
-      "Будь ласка, скористайтесь кнопками нижче або уточніть ваш запит."
-    );
+    if (normalized.includes("technical"))
+      return bot.emit("hears", ctx, "🛠️ Technical Maintenance");
+    if (normalized.includes("operating"))
+      return bot.emit("hears", ctx, "💻 Operating System");
+    if (normalized.includes("purchase") || normalized.includes("sale"))
+      return bot.emit("hears", ctx, "🛒 Purchase / Sale of laptops and parts");
+    return ctx.reply("Please use the buttons below or clarify your request.");
   }
 
-  // Логіка поетапного збору даних
+  // Step-by-step data collection logic
   if (session.step === "collect_name") {
     session.data.name = text.trim();
     session.step = "collect_phone";
-    return ctx.reply("(2/3) Будь ласка, залиште свій номер телефону:");
+    return ctx.reply("(2/3) Please enter your phone number:");
   }
 
   if (session.step === "collect_phone") {
@@ -115,7 +109,7 @@ bot.on("text", async (ctx) => {
     session.step = "collect_problem";
     session.problemAttempts = 0;
     return ctx.reply(
-      "(3/3) Опишіть проблему з ноутбуком, яку потрібно вирішити:"
+      "(3/3) Please describe the issue with your laptop that needs to be solved:"
     );
   }
 
@@ -123,52 +117,51 @@ bot.on("text", async (ctx) => {
     if (!session.problemAttempts) session.problemAttempts = 0;
     session.tempProblem = text.trim();
 
-    // AI перевіряє на адекватність і відповідність тематиці
+    // AI checks for relevance and adequacy
     const aiReply = await getAIResponse(
-      `Клієнт написав: "${session.tempProblem}". Чи це схоже на реальний запит, пов'язаний із ремонтом, обслуговуванням або покупкою/продажем ноутбука чи комплектуючих?
-  Навіть якщо опис короткий або містить помилки/суржик, але суть зрозуміла — відповідай "Так". 
-  Якщо це просто набір випадкових слів або щось безглузде (наприклад, "х*й", "лорпорп"), відповідай "Ні". 
-  Відповідь лише: "Так" або "Ні".`
+      `The client wrote: "${session.tempProblem}". Does this look like a valid request related to laptop repair, maintenance, or buying/selling components?
+Even if the description is short or has mistakes/mixed language, but the meaning is clear — reply "Yes".
+If it's just random characters or nonsense (e.g., "asdfasdf", "qwerty"), reply "No".
+Reply with only: "Yes" or "No".`
     );
 
-    const isValid = aiReply.toLowerCase() === "так";
+    const isValid = aiReply.toLowerCase() === "yes";
 
     if (!isValid) {
       session.problemAttempts++;
 
       if (session.problemAttempts === 1) {
         return ctx.reply(
-          "🤨 Гм... Це звучить не зовсім як технічна проблема. Можливо, спробуєте ще раз описати, що саме не працює або що вас цікавить?"
+          "🤨 Hmm... That doesn’t really sound like a technical issue. Could you please try again and describe what’s not working or what exactly you need help with?"
         );
       } else {
         session.data.problem = session.tempProblem;
         await sendDataToGoogleSheets(session.data);
         ctx.session = null;
         return ctx.reply(
-          "Ну що ж, прийдеться майстру так і передати 🤷‍♂️ Він зв’яжеться з вами у найближчий робочий час. Зазвичай ми працюємо щодня з 10:00 до 18:00."
+          "Well, I guess that’s exactly what the technician will get 🤷‍♂️ He’ll contact you during our next working hours. We’re usually available daily from 10:00 to 18:00."
         );
       }
     }
-
-    // Якщо все ок — друга перевірка: чи достатньо інформативно?
+    // If the AI confirms the problem is valid
     const aiCheckDetails = await getAIResponse(
-      `Клієнт описав проблему: ${session.tempProblem}. Чи це виглядає як адекватний технічний запит, навіть якщо короткий?
-  Наприклад, "переустановити windows", "почистити ноутбук", "не вмикається" — це достатньо.
-  Відповідай лише: "Так" або "Ні".`
+      `The client described the issue as: "${session.tempProblem}". Does this look like a valid technical request, even if it's brief?
+Examples like "reinstall Windows", "clean the laptop", or "doesn't turn on" are considered sufficient.
+Reply only: "Yes" or "No".`
     );
 
-    if (aiCheckDetails.toLowerCase().includes("ні")) {
+    if (aiCheckDetails.toLowerCase().includes("No")) {
       session.problemAttempts++;
       if (session.problemAttempts < 2) {
         return ctx.reply(
-          "Такий опис проблеми не дуже допоможе нам вирішити проблему. Можливо, опишіть детальніше або конкретизуйте симптоми? Спробуйте ще раз."
+          "This description doesn't really help us understand the issue. Could you please provide more details or describe the symptoms more specifically? Please try again."
         );
       } else {
         session.data.problem = session.tempProblem;
         await sendDataToGoogleSheets(session.data);
         ctx.session = null;
         return ctx.reply(
-          "Дякуємо! Ми зв’яжемося з вами у найближчий робочий час. Зазвичай ми працюємо щодня з 10:00 до 18:00."
+          "Thank you! We’ll get in touch with you during our next working hours. We usually work daily from 10:00 to 18:00."
         );
       }
     } else {
@@ -176,15 +169,9 @@ bot.on("text", async (ctx) => {
       await sendDataToGoogleSheets(session.data);
 
       await ctx.reply(
-        "Дякуємо! Ми зв’яжемося з вами у найближчий робочий час. Зазвичай ми працюємо щодня з 10:00 до 18:00."
+        "Thank you! We’ll get in touch with you during our next working hours. We usually work daily from 10:00 to 18:00."
       );
-      await ctx.reply("Натисніть кнопку нижче, щоб повернутись до меню.", {
-        reply_markup: {
-          keyboard: [["🔙 Головне меню"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
+
       ctx.session = null;
     }
   }

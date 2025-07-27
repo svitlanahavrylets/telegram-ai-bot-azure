@@ -5,10 +5,10 @@ async function getServiceContent(columnName) {
     const response = await axios.get(
       "https://hook.eu2.make.com/5s4seh193zi2jw95lht18hrxggipbp4r"
     );
-    return response.data[columnName] || "Наразі немає даних.";
+    return response.data[columnName] || "No data available at the moment.";
   } catch (error) {
-    console.error("Помилка при отриманні послуг:", error);
-    return "Сталася помилка при завантаженні послуг.";
+    console.error("Failed to retrieve services:", error);
+    return "An error occurred while loading services.";
   }
 }
 

@@ -11,14 +11,16 @@ app.use("/", routes);
 
 const PORT = process.env.PORT || 7000;
 app.listen(PORT, async () => {
-  console.log(`✅ Сервер слухає порт ${PORT}`);
+  console.log(`✅ Server is listening on port ${PORT}`);
 
   const domain = process.env.WEBHOOK_URL;
   if (!domain) {
-    return console.error("❗ Вкажи WEBHOOK_URL у .env або Azure App Settings");
+    return console.error(
+      "❗ Please specify WEBHOOK_URL in .env or Azure App Settings"
+    );
   }
 
   const webhookUrl = `${domain}/webhook`;
   await bot.telegram.setWebhook(webhookUrl);
-  console.log("📌 Webhook встановлено на:", webhookUrl);
+  console.log("📌 Webhook has been set to:", webhookUrl);
 });

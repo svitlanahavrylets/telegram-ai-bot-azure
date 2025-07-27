@@ -5,9 +5,9 @@ const bot = require("../bot");
 router.get("/", async (req, res) => {
   try {
     const me = await bot.telegram.getMe();
-    res.send(`🤖 Бот активний як @${me.username}`);
+    res.send(`🤖 Bot is active as @${me.username}`);
   } catch {
-    res.status(500).send("Бот недоступний");
+    res.status(500).send("Bot is unavailable");
   }
 });
 

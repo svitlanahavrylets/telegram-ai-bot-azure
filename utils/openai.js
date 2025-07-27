@@ -28,11 +28,11 @@ async function getAIResponse(userInput) {
 
     return (
       response.data.choices?.[0]?.message?.content?.trim() ||
-      "Вибачте, не вдалося отримати відповідь."
+      "Sorry, we couldn’t get a response."
     );
   } catch (error) {
     console.error("OpenAI error:", error.response?.data || error.message);
-    return "Сталася помилка при зверненні до AI. Але ми продовжуємо працювати!";
+    return "An error occurred while contacting AI. But we’re still running!";
   }
 }
 module.exports = { getAIResponse };
